@@ -3,6 +3,8 @@ import base64
 import configparser
 import os
 
+import ecdsa
+
 from core.blockchain_sdk import BlockChainClient
 from core.blockchain_sdk import Block
 from ecdsa import SigningKey, SECP256k1
@@ -20,6 +22,7 @@ def __register_arguments():
     parser.add_argument('-cb', '--create-block', action='store_true', help='Create new block on the blockchain')
     parser.add_argument('-cw', '--create-wallet', action='store_true', help='Create a new wallet for the blockchain')
     parser.add_argument('-sw', '--switch-wallet', help='Switch to new wallet. Pass wallet name as parameter')
+    parser.add_argument('-iw', '--import-wallet', action='store_true', help='Import wallet')
     parser.add_argument('-s', '--setup', action='store_true', help='First time setup')
 
 
@@ -99,5 +102,27 @@ if __name__ == '__main__':
                         my_config.write(config_file)
 
         print('Switched Wallet to: ' + args.switch_wallet)
+    elif args.import_wallet:
+        # Get the key pair
+        priv_key = str(input('Enter the private key: \n'))
+        pub_key = str(input('Enter the public key: \n'))
+        # Recreate the ecdsa key objects
+        sk = ecdsa.SigningKey.from_string(bytes.fromhex(priv_key), curve=ecdsa.SECP256k1)
+        vk = ecdsa.VerifyingKey.from_string(base64.b64decode(pub_key), curve=ecdsa.SECP256k1)
+        # Sign a dummy message for the verificatio process
+        sig = sk.sign(b'message')
+        try:
+            # Verify the key pair, throws exception when keys don't match
+            vk.verify(sig, b'message')
+            # Save the bad boy
+            filename = input('Write the name of your new address: ') + '.txt'
+            file_path = os.getenv('APPDATA') + '\\blockchain-cli\\wallets\\' + filename
+            with open(file_path, 'w') as f:
+                f.write('Private key:{0}\nWallet address / Public key:{1}'.format(priv_key, pub_key))
+            print('Your new address and private key are now in the file {0}'.format(file_path))
+        except ecdsa.keys.BadSignatureError as e:
+            print("Error: It appears that you're not the owner of the wallet or the private key and public key are "
+                  "incorrect")
+
 
 
