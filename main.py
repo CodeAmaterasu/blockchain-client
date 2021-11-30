@@ -1,18 +1,16 @@
 import argparse
 import base64
 import configparser
+import json
 import os
-
 import ecdsa
-
-from core.blockchain_sdk import BlockChainClient
-from core.blockchain_sdk import Block
-from ecdsa import SigningKey, SECP256k1
 import websocket
+from core.blockchain_sdk import BlockChainClient
+from ecdsa import SigningKey, SECP256k1
+
+
 config_parser = configparser.ConfigParser()
 config_parser.read(os.getenv('APPDATA') + '\\blockchain-cli\\config.ini')
-
-client = BlockChainClient(host=config_parser['Blockchain']['host'])
 
 parser = argparse.ArgumentParser(description='Client to connect to CodeAmaterasu/blockchain')
 
@@ -57,15 +55,23 @@ def __setup():
 
 
 def __on_message(ws, message):
-    print(message)
+    response = json.loads(message)
+    if len(response) < 1:
+        print('Nothing to mine')
+        return
     # Mine
-    client.execute('m')
+    my_client = BlockChainClient(host=config_parser['Blockchain']['host'])
+    my_client.execute('m')
 
 
 if __name__ == '__main__':
     __register_arguments()
     args = __parse_arguments()
-
+    if args.setup:
+        print('Starting setup')
+        __setup()
+        exit(0)
+    client = BlockChainClient(host=config_parser['Blockchain']['host'])
     if args.get_openchain:
         print(client.execute('go'))
     elif args.get_blockchain:
@@ -75,19 +81,17 @@ if __name__ == '__main__':
         config.read(os.getenv('APPDATA') + '\\blockchain-cli\\config.ini')
         owner = config['Wallet']['pub_key']
         resource = input('Enter Resource\n')
-        block = Block(owner=owner, resource=resource)
         new_block = {
             "owner": str(owner),
             "resource": str(resource)
         }
-        # client.create_block(block={'owner': owner, 'resource': resource})
         client.create_block(block=new_block)
     elif args.create_wallet:
         sk = SigningKey.generate(curve=SECP256k1)
         private_key = sk.to_string().hex()
         vk = sk.get_verifying_key()
         public_key = vk.to_string().hex()
-        # Make it shorter and therefore moros.getenv('APPDATA') + '\\blockchain-cli\\walletse readable
+        # Make it shorter and therefore more readable
         public_key = base64.b64encode(bytes.fromhex(public_key))
 
         filename = input('Write the name of your new address: ') + '.txt'
@@ -95,9 +99,6 @@ if __name__ == '__main__':
         with open(file_path, 'w') as f:
             f.write('Private key:{0}\nWallet address / Public key:{1}'.format(private_key, public_key.decode()))
         print('Your new address and private key are now in the file {0}'.format(file_path))
-    elif args.setup:
-        print('Starting setup')
-        __setup()
     elif args.switch_wallet:
         available_wallets = os.listdir(os.getenv('APPDATA') + '\\blockchain-cli\\wallets')
         for wallet in available_wallets:
