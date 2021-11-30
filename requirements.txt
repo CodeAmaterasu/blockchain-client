@@ -1,2 +1,3 @@
 requests
 ecdsa
+websocket_client

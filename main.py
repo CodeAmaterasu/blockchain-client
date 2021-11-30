@@ -8,10 +8,11 @@ import ecdsa
 from core.blockchain_sdk import BlockChainClient
 from core.blockchain_sdk import Block
 from ecdsa import SigningKey, SECP256k1
-import binascii
-import random
+import websocket
+config_parser = configparser.ConfigParser()
+config_parser.read(os.getenv('APPDATA') + '\\blockchain-cli\\config.ini')
 
-client = BlockChainClient()
+client = BlockChainClient(host=config_parser['Blockchain']['host'])
 
 parser = argparse.ArgumentParser(description='Client to connect to CodeAmaterasu/blockchain')
 
@@ -23,6 +24,8 @@ def __register_arguments():
     parser.add_argument('-cw', '--create-wallet', action='store_true', help='Create a new wallet for the blockchain')
     parser.add_argument('-sw', '--switch-wallet', help='Switch to new wallet. Pass wallet name as parameter')
     parser.add_argument('-iw', '--import-wallet', action='store_true', help='Import wallet')
+    parser.add_argument('-m', '--mine', action='store_true', help='Mine on the blockchain')
+    parser.add_argument('-sh', '--set-host', help='Set the blockchain host. Parameter host')
     parser.add_argument('-s', '--setup', action='store_true', help='First time setup')
 
 
@@ -53,6 +56,12 @@ def __setup():
     print('Finished setup!')
 
 
+def __on_message(ws, message):
+    print(message)
+    # Mine
+    client.execute('m')
+
+
 if __name__ == '__main__':
     __register_arguments()
     args = __parse_arguments()
@@ -62,12 +71,17 @@ if __name__ == '__main__':
     elif args.get_blockchain:
         print(client.execute('gb'))
     elif args.create_block:
-        # FIXME: Get it from somewhere locally, not hardcoded
-        owner = 'abcv4531adfbjiup901'
+        config = configparser.ConfigParser()
+        config.read(os.getenv('APPDATA') + '\\blockchain-cli\\config.ini')
+        owner = config['Wallet']['pub_key']
         resource = input('Enter Resource\n')
         block = Block(owner=owner, resource=resource)
+        new_block = {
+            "owner": str(owner),
+            "resource": str(resource)
+        }
         # client.create_block(block={'owner': owner, 'resource': resource})
-        client.create_block(block=block)
+        client.create_block(block=new_block)
     elif args.create_wallet:
         sk = SigningKey.generate(curve=SECP256k1)
         private_key = sk.to_string().hex()
@@ -123,6 +137,19 @@ if __name__ == '__main__':
         except ecdsa.keys.BadSignatureError as e:
             print("Error: It appears that you're not the owner of the wallet or the private key and public key are "
                   "incorrect")
+    elif args.set_host:
+        config_path = os.getenv('APPDATA') + '\\blockchain-cli\\config.ini'
+        my_config = configparser.ConfigParser()
+        my_config.read(config_path)
+        my_config['Blockchain']['host'] = args.set_host
+        with open(config_path, 'w') as config_file:
+            my_config.write(config_file)
+        print('Blockchain host updated')
+    elif args.mine:
+        ws = websocket.WebSocketApp(url='ws://localhost:8080/ws/openchain', on_message=__on_message)
+        ws.run_forever()
+
+
 
 
 

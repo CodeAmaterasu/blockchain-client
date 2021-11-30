@@ -20,14 +20,14 @@ class BlockChainClient:
         self.functions = {
             'go': '/api/get_openchain',
             'gb': '/api/get_chain',
-            'cb': '/api/create_block'
+            'cb': '/api/create_block',
+            'm': '/api/mine_block'
         }
 
     def execute(self, function_key: str):
         result = requests.get(url=self.host + self.functions[function_key])
         return result.text
 
-    def create_block(self, block: Block):
-        # FIXME: This causes following -> TypeError: 'Block' object is not iterable
-        result = requests.post(url=self.host + self.functions['cb'], data=block, headers=self.headers)
+    def create_block(self, block: dict):
+        result = requests.post(url=self.host + self.functions['cb'], json=block, headers=self.headers)
         return result.text
