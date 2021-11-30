@@ -79,11 +79,22 @@ if __name__ == '__main__':
     elif args.create_block:
         config = configparser.ConfigParser()
         config.read(os.getenv('APPDATA') + '\\blockchain-cli\\config.ini')
-        owner = config['Wallet']['pub_key']
+        pub_key = config['Wallet']['pub_key']
+        priv_key = config['Wallet']['priv_key']
         resource = input('Enter Resource\n')
+
+        sk = ecdsa.SigningKey.from_string(bytes.fromhex(priv_key), curve=ecdsa.SECP256k1)
+        vk = ecdsa.VerifyingKey.from_string(base64.b64decode(pub_key), curve=ecdsa.SECP256k1)
+
+        signed_resource = sk.sign(bytes(resource, 'utf-8'))
+        try:
+            vk.verify(signed_resource, bytes(resource, 'utf-8'))
+        except ecdsa.keys.BadSignatureError as e:
+            print('Error with key pair')
         new_block = {
-            "owner": str(owner),
-            "resource": str(resource)
+            "owner": str(pub_key),
+            "resource": str(resource),
+            "signature": str(signed_resource.hex())
         }
         client.create_block(block=new_block)
     elif args.create_wallet:
