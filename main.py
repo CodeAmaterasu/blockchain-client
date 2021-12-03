@@ -7,10 +7,11 @@ import ecdsa
 import websocket
 from core.blockchain_sdk import BlockChainClient
 from ecdsa import SigningKey, SECP256k1
+from pathlib import Path
 
 
 config_parser = configparser.ConfigParser()
-config_parser.read(os.getenv('APPDATA') + '\\blockchain-cli\\config.ini')
+config_parser.read(str(Path.home()) + '\\blockchain-cli\\config.ini')
 
 parser = argparse.ArgumentParser(description='Client to connect to CodeAmaterasu/blockchain')
 
@@ -33,8 +34,9 @@ def __parse_arguments():
 
 def __setup():
     print('Configuring directories.....')
-    app_data_dir = os.getenv('APPDATA')
-    blockchain_cli_dir = app_data_dir + '\\blockchain-cli'
+    app_data_dir = os.getenv('USER')
+    user_dir = str(Path.home())
+    blockchain_cli_dir = user_dir + '\\blockchain-cli'
     # Create script dir
     os.mkdir(blockchain_cli_dir)
     wallet_dir = blockchain_cli_dir + '\\wallets'
@@ -78,7 +80,7 @@ if __name__ == '__main__':
         print(client.execute('gb'))
     elif args.create_block:
         config = configparser.ConfigParser()
-        config.read(os.getenv('APPDATA') + '\\blockchain-cli\\config.ini')
+        config.read(str(Path.home()) + '\\blockchain-cli\\config.ini')
         pub_key = config['Wallet']['pub_key']
         priv_key = config['Wallet']['priv_key']
         resource = input('Enter Resource\n')
@@ -106,25 +108,25 @@ if __name__ == '__main__':
         public_key = base64.b64encode(bytes.fromhex(public_key))
 
         filename = input('Write the name of your new address: ') + '.txt'
-        file_path = os.getenv('APPDATA') + '\\blockchain-cli\\wallets\\' + filename
+        file_path = str(Path.home()) + '\\blockchain-cli\\wallets\\' + filename
         with open(file_path, 'w') as f:
             f.write('Private key:{0}\nWallet address / Public key:{1}'.format(private_key, public_key.decode()))
         print('Your new address and private key are now in the file {0}'.format(file_path))
     elif args.switch_wallet:
-        available_wallets = os.listdir(os.getenv('APPDATA') + '\\blockchain-cli\\wallets')
+        available_wallets = os.listdir(str(Path.home()) + '\\blockchain-cli\\wallets')
         for wallet in available_wallets:
             if args.switch_wallet == wallet.split('.')[0]:
-                with open(os.getenv('APPDATA') + '\\blockchain-cli\\wallets\\' + wallet, 'r') as wallet_file:
+                with open(str(Path.home()) + '\\blockchain-cli\\wallets\\' + wallet, 'r') as wallet_file:
                     wallet_content = wallet_file.readlines()
                     my_config = configparser.ConfigParser()
-                    my_config.read(os.getenv('APPDATA') + '\\blockchain-cli\\config.ini')
+                    my_config.read(str(str(Path.home())) + '\\blockchain-cli\\config.ini')
                     for content in wallet_content:
                         split_content = content.strip().split(':')
                         if 'Private key' in split_content[0]:
                             my_config['Wallet']['priv_key'] = split_content[1]
                         elif 'Wallet address / Public key' in split_content[0]:
                             my_config['Wallet']['pub_key'] = split_content[1]
-                    with open(os.getenv('APPDATA') + '\\blockchain-cli\\config.ini', 'w') as config_file:
+                    with open(str(Path.home()) + '\\blockchain-cli\\config.ini', 'w') as config_file:
                         my_config.write(config_file)
 
         print('Switched Wallet to: ' + args.switch_wallet)
@@ -142,7 +144,7 @@ if __name__ == '__main__':
             vk.verify(sig, b'message')
             # Save the bad boy
             filename = input('Write the name of your new address: ') + '.txt'
-            file_path = os.getenv('APPDATA') + '\\blockchain-cli\\wallets\\' + filename
+            file_path = str(Path.home()) + '\\blockchain-cli\\wallets\\' + filename
             with open(file_path, 'w') as f:
                 f.write('Private key:{0}\nWallet address / Public key:{1}'.format(priv_key, pub_key))
             print('Your new address and private key are now in the file {0}'.format(file_path))
@@ -150,7 +152,7 @@ if __name__ == '__main__':
             print("Error: It appears that you're not the owner of the wallet or the private key and public key are "
                   "incorrect")
     elif args.set_host:
-        config_path = os.getenv('APPDATA') + '\\blockchain-cli\\config.ini'
+        config_path = str(Path.home()) + '\\blockchain-cli\\config.ini'
         my_config = configparser.ConfigParser()
         my_config.read(config_path)
         my_config['Blockchain']['host'] = args.set_host
