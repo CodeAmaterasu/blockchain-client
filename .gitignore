@@ -5,3 +5,5 @@
 *.pyc
 venv
 
+# Mac
+.DS_Store
