@@ -160,7 +160,7 @@ if __name__ == '__main__':
             my_config.write(config_file)
         print('Blockchain host updated')
     elif args.mine:
-        ws = websocket.WebSocketApp(url='ws://localhost:8080/ws/openchain', on_message=__on_message)
+        ws = websocket.WebSocketApp(url='ws://blockchain.danilojakob.ch/ws/openchain', on_message=__on_message)
         ws.run_forever()
 
 
