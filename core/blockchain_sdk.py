@@ -1,4 +1,5 @@
 import dataclasses
+import json
 
 import requests
 
@@ -29,5 +30,7 @@ class BlockChainClient:
         return result.text
 
     def create_block(self, block: dict):
-        result = requests.post(url=self.host + self.functions['cb'], json=block, headers=self.headers)
+        print(json.dumps(block))
+        result = requests.post(url=self.host + self.functions['cb'], json=json.dumps(block), headers=self.headers)
+        #print(block)
         return result.text

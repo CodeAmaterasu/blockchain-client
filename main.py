@@ -94,7 +94,7 @@ if __name__ == '__main__':
             print('Error with key pair')
         new_block = {
             "origin": str(pub_key),
-            "amount": float(amount),
+            "amount": str(amount),
             "signature": str(signed_resource.hex()),
             "destination": str(destination)
         }
@@ -160,8 +160,12 @@ if __name__ == '__main__':
             my_config.write(config_file)
         print('Blockchain host updated')
     elif args.mine:
-        ws = websocket.WebSocketApp(url='ws://blockchain.danilojakob.ch/ws/openchain', on_message=__on_message)
-        ws.run_forever()
+        try:
+            ws = websocket.WebSocketApp(url='wss://www.blockchain.danilojakob.ch/ws/openchain', on_message=__on_message)
+            ws.run_forever()
+        except Exception as e:
+            print(e)
+
 
 
 
